@@ -69,6 +69,7 @@ WantedBy=multi-user.target">/etc/systemd/system/status.service
 sudo systemctl start status
 sudo systemctl enable status
 ```
+![example](https://cdn.discordapp.com/attachments/1142213964982390871/1145419218121130106/image.png)
 ## Script Details
 Please note that this script relies on external services (Datalix API and Discord) for proper functionality. Make sure you have valid API tokens and webhook URLs for accurate monitoring and updates.
 
