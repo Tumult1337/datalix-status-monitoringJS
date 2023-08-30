@@ -1,5 +1,4 @@
 const XMLHttpRequest = require("xhr2");
-var rqDelay = 4;
 const userAgent = "XMLHttpRequest"
 const data = [
 	{
@@ -17,6 +16,7 @@ const data = [
 		lastState: "", // placeholder, will get filled by the script
 	},
 ];
+var rqDelay = data.length || 2; // default 2 sec per service 2 sec delay (ratelimit is 30rq/60sec)
 const statusDesc = {
 	stopping: "Force stoping",
 	shutdown: "Shutting down",
