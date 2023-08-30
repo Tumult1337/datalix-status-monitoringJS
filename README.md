@@ -71,9 +71,9 @@ sudo systemctl enable status
 ```
 ![example](https://cdn.discordapp.com/attachments/1142213964982390871/1145419218121130106/image.png)
 ## Script Details
-Please note that this script relies on external services (Datalix API and Discord) for proper functionality. Make sure you have valid API tokens and webhook URLs for accurate monitoring and updates.
-global ratelimit per ip is 120 so you can only add up to 60 services (or you need an aditional server/ip for the requests and a second instance of the script)
-For more information about Datalix and their services, visit https://datalix.de
+- Please note that this script relies on external services (Datalix API and Discord) for proper functionality. Make sure you have valid API tokens and webhook URLs for accurate monitoring and updates.
+- Global ratelimit is 120rq/min per ip so you can only add up to 60 services (or you need an aditional server/ip for the requests and a second instance of the script)
+- For more information about Datalix and their services, visit https://datalix.de / https://apidoc.datalix.de
 
 
 `idea from https://github.com/AsylCeo/Datalix-Status`
