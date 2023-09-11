@@ -1,23 +1,21 @@
 const XMLHttpRequest = require("xhr2");
-const userAgent = "XMLHttpRequest"
 const data = [
 	{
 		token: "", //api token
 		service: "", // service id
 		webhook: "", // discord webhook
 		ipv4: null, // placeholder, will get filled by the script
-		lastState: null, // placeholder, will get filled by the script
+		lastState: "", // placeholder, will get filled by the script
 	},
 	{
 		token: "", //api token2(can be the same as the first one, only need a different one if you request for another account)
 		service: "", // service id2
 		webhook: "", // discord webhook2
 		ipv4: null,
-		lastState: null,
+		lastState: "",
 	},
 ];
-var rqDelay = data.length || 2; // default 2 sec per service 2 sec delay (ratelimit is 30rq/60sec)
-
+const userAgent = "XMLHttpRequest"
 const statusDesc = {
 	stopping: "Force stoping",
 	shutdown: "Shutting down",
@@ -33,6 +31,8 @@ const statusDesc = {
 	deletedService: "Service got permanently deleted",
 	unk: "No data"
 };
+
+var rqDelay = data.length || 2; // default 2 sec per service 2 sec delay (ratelimit is 30rq/60sec)
 
 function getURL(url, index) {
 	if (url) {
@@ -110,11 +110,8 @@ function getServerStatus(index, status) {
 		if (status == "ip") {
 			if (response.ipv4[0] && response.ipv4[0].ip) {
 				data[index].ipv4 = response.ipv4[0].ip;
-			}
+			} 
 		} else if (!status) {
-			if (data[index].lastState == state) {
-				return;
-			}
 			var color = 0x00FF00
 			if (response.product.status != "running") {
 				color = 0xFFFF00
@@ -137,6 +134,9 @@ function getServerStatus(index, status) {
 			if (response.service.daysleft < 1) {
 				response.service.daysleft = "none"
 				color = 0xFF0000
+			}
+			if (data[index].lastState == state) {
+				return;
 			}
 			data[index].lastState = state;
 			//////////////////////////////////////////////////		   
@@ -177,3 +177,4 @@ function main() {
 	}
 }
 main();
+
