@@ -129,7 +129,7 @@ function getServerStatus(index, status) {
 			
 			if (response.product.trafficlimitreached != 0) {
 				var trafficLimit = "Yes"
-				color = 0xFF0000
+				color = 0xFFAA00
 			}
 			if (response.service.daysleft < 1) {
 				response.service.daysleft = "none"
