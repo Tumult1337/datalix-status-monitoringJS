@@ -1,47 +1,103 @@
 const XMLHttpRequest = require("xhr2");
+const useIPv4AsName = false;
+/*
+	if set it to true this will log the first IPv4 address instead of the name (so you will know wich service it is exactly)
+	if set to false the log will only log the name you have entered in the data array
+*/
 const data = [
-	{
-		token: "", //api token
-		service: "", // service id
-		webhook: "", // discord webhook
-		ipv4: null, // placeholder, will get filled by the script
+    {
+		name: "",
+		token: "",          
+		service: "",
+		webhook: "",		
 		lastState: "", // placeholder, will get filled by the script
-	},
-	{
-		token: "", //api token2(can be the same as the first one, only need a different one if you request for another account)
-		service: "", // service id2
-		webhook: "", // discord webhook2
 		ipv4: null,
-		lastState: "",
+	},
+    {
+		name: "",
+		token: "",          
+		service: "",
+		webhook: "",		
+		lastState: "", // placeholder, will get filled by the script
+		ipv4: null,
 	},
 ];
-const userAgent = "XMLHttpRequest"
-const statusDesc = {
-	stopping: "Force stoping",
-	shutdown: "Shutting down",
-	starting: "Starting",
-	running: "Online",
-	stopped: "Offline",
-	installing: "Service is installing",
-	backupplanned: "Backup planned",	
-	restorebackup: "Restoring from Backup",
-	createbackup: "Creating Backup",
-	restoreplanned: "Restoring from Backup planned",	
-	preorder: "Preorded",
-	deletedService: "Service got permanently deleted",
-	unk: "No data"
+const colors = {
+	green: 0x00FF00,
+	yellow: 0xFFFF00,
+	orange: 0xFFAA00,
+	red: 0xFF0000,
+	gray: 0x696969,
+	blue: 0x0000FF,
+	lightblue: 0x00ffff,
+	violet: 0x6900FF
+}
+const apiStateDesc = {
+	stopping: {
+		desc: "Force stoping",
+		color: colors.orange
+	},
+	shutdown: {
+		desc: "Shutting down",
+		color: colors.yellow
+	},
+	starting: {
+		desc: "Starting",
+		color: colors.lightblue
+	},
+	running: {
+		desc: "Online",
+		color: colors.green
+	},
+	stopped: {
+		desc: "Offline",
+		color: colors.red
+	},
+	installing: {
+		desc: "Service is installing",
+		color: colors.lightblue
+	},
+	backupplanned: {
+		desc: "Backup planned",
+		color: colors.violet
+	},
+	restorebackup: {
+		desc:"Restoring from Backup",
+		color: colors.violet
+	},
+	createbackup: {
+		desc:"Creating Backup",
+		color: colors.violet
+	},
+	restoreplanned: {
+		desc:"Restoring from Backup planned",
+		color: colors.violet
+	},
+	preorder: {
+		desc: "Preorded",
+		color: colors.blue
+	},
+	deletedService: {
+		desc:"Service got permanently deleted",
+		color: colors.red
+	},
+	unk: {
+		desc: "No data",
+		color: colors.gray
+	}
 };
 
-var rqDelay = data.length || 2; // default 2 sec per service 2 sec delay (ratelimit is 30rq/60sec)
+const userAgent = "XMLHttpRequest";
+var rqDelay = data.length+1 || 2; // default 2 sec per service 2 sec delay (ratelimit is 30rq/60sec)
 
-function getURL(url, index) {
-	if (url) {
-		return "https://backend.datalix.de/v1/service/" + data[index].service + "/" + url + "?token=" + data[index].token;
-	}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function getURL(index, url) {
+	if (url) return "https://backend.datalix.de/v1/service/" + data[index].service + "/" + url + "?token=" + data[index].token;
 	return "https://backend.datalix.de/v1/service/" + data[index].service + "?token=" + data[index].token;
 };
 
-function sendEmbed(details, index, color) {	
+function sendEmbed(details, index, color) {
 	const out = {
 		'author': {
 			name: 'Datalix Server Status',
@@ -61,115 +117,130 @@ function sendEmbed(details, index, color) {
 	const xhr = new XMLHttpRequest();
 	xhr.open("POST", data[index].webhook, true);
 	xhr.setRequestHeader('Content-type', 'application/json');
-	const params = {
+	xhr.onload = function() {
+		console.log("Status update for " + data[index].name || "Service " + data[index].service)
+	}
+	const params = JSON.stringify({
 		content: "",
 		username: "Datalix Server Status Update",
 		avatar_url: 'https://cdn.discordapp.com/icons/931996684215521300/b6cc0c8c05dbd8ed912685b8f0a205f9.webp?size=96',
 		embeds: [out]
-	}
-	xhr.onload = function() {
-		console.log("Status update for " + data[index].ipv4 || "No data")
-	}
-	xhr.send(JSON.stringify(params));
+	});
+	xhr.send(params);
 }
 
-function getServerStatus(index, status) {
+function getServiceIP(index) {
 	var xmlHttp = new XMLHttpRequest();
 	var response = "";
-	const startTime = Date.now()
-	xmlHttp.open("GET", getURL(status, index), true);
+	xmlHttp.open("GET", getURL(index, "ip"), true);
 	xmlHttp.setRequestHeader('User-Agent', userAgent);
 	xmlHttp.send();
-	xmlHttp.onload = () => {
-		if (xmlHttp.status == 429) {
-			rqDelay++;
-			console.log("Ratlimited, new delay: " + rqDelay);
+	xmlHttp.onload = function() {
+		response = JSON.parse(xmlHttp.response);
+		if (!response || xmlHttp.status != 200 || (!response.ipv4[0] || !response.ipv4[0].ip)) {
+			if (data[index].ipv4 == null) data[index].ipv4 = "Error getting IPv4 address.";
+			data[index].name = "Error getting IPv4 address.";
 			return;
 		}
-		if (xmlHttp.status != 200) {			
-			if (JSON.stringify(xmlHttp.response).match("Ihre Dienstleistung wurde unwiederruflich")) {				
-				if (data[index].lastState != "deleted") {
-					console.log(xmlHttp.response)
-					sendEmbed([
-						{name: "IP", value: data[index].ipv4 || "No data"},
-						{name: "Status", value: statusDesc["deletedService"]}				
-					], index, 0xFF0000);
-				}				
-				data[index].lastState = "deleted"
-				return;
-			}
-			console.log("HTTP error: " + xmlHttp.status);
-			console.log(xmlHttp.response);
-			return xmlHttp.status;
-		}
-		response = JSON.parse(xmlHttp.response);	
-		if (!response) { 
-			console.log("no data returned");
-			return "no data";
-		}
-		if (status == "ip") {
-			if (response.ipv4[0] && response.ipv4[0].ip) {
-				data[index].ipv4 = response.ipv4[0].ip;
-			} 
-		} else if (!status) {
-			var color = 0x00FF00
-			if (response.product.status != "running") {
-				color = 0xFFFF00
-			}			
-			var locked = "No"
-			if (response.service.locked != 0) {
-				locked = "Yes, " + response.service.lockreason || "Not available"
-				color = 0xFF0000
-			}
-			var state = response.product.status || "No data";
-
-			if (!statusDesc[state]) {
-				state = statusDesc["unk"] + "(" + toString(response.product.status) + ")" 
-				color = 0x696969			}
-			
-			if (response.product.trafficlimitreached != 0) {
-				var trafficLimit = "Yes"
-				color = 0xFFAA00
-			}
-			if (response.service.daysleft < 1) {
-				response.service.daysleft = "none"
-				color = 0xFF0000
-			}
-			if (data[index].lastState == state) {
-				return;
-			}
-			data[index].lastState = state;
-			//////////////////////////////////////////////////		   
-			const details = [
-				{name: "IP", value: data[index].ipv4 || "No data"},
-				{name: "Status", value: statusDesc[state] || statusDesc["unk"]},				
-				{
-					name: response.service.productdisplay + " informations",
-					value: "**Locked**:	 " + (locked || "No data") + "\n" +
-					"**Traffic limit Reached**:	 " + (trafficLimit || "No") + "\n" +
-					"**node**:	 " + (response.product.node || "No data") + "\n" +
-					"**Datacenter**:	 " + (response.product.location || "No data") + "\n" +
-					"**cluster**:	 " + (response.product.cluster || "No data") + "\n" +					
-					"**daysleft**:	 " + (response.service.daysleft || "No data") + "\n" +
-					"**API-Time**:	 " + ((Date.now() - startTime) + "ms" || "No data") + "\n"
-				}
-			]
-			sendEmbed(details, index, color)
-		} else {
-			console.log("Unkown status URL:" + status);
-			console.log(response);
-			return; 
-		}
+		data[index].ipv4 = response.ipv4[0].ip;
+		data[index].name = data[index].ipv4;
 	}
 }
 
-function main() {		
-	try {	
+async function getServerStatus(index) {
+	try {
+		if (useIPv4AsName && (!data[index].ipv4 || data[index].ipv4 == "Error getting IPv4 address.")) {
+			getServiceIP(index);
+			sleep(269); // wait until api responded
+		}
+		var xmlHttp = new XMLHttpRequest();
+		var response = "";
+		const startTime = Date.now()
+		xmlHttp.open("GET", getURL(index), true);
+		xmlHttp.setRequestHeader('User-Agent', userAgent);
+		xmlHttp.send();
+		xmlHttp.onload = function() {
+			try {
+				if (xmlHttp.status == 429) {
+					console.log("Ratelimited, new delay: " + rqDelay + " | " + xmlHttp.response);
+					rqDelay++;
+					return;
+				}
+				if (xmlHttp.status == 403) {
+					if (!JSON.stringify(xmlHttp.response).match("Ihre Dienstleistung wurde unwiederruflich")) {
+						console.log("Forbidden: " + xmlHttp.status + " | " + xmlHttp.response)
+						return;
+					}
+					if (data[index].lastState == "deleted") return;
+					const embedData = [
+						{ name: "Service", value: data[index].name },
+						{ name: "Status", value: apiStateDesc["deletedService"].desc }
+					];
+					sendEmbed(embedData, index, apiStateDesc["deletedService"].color);
+					data[index].lastState = "deleted"
+					return;
+				}
+				if (xmlHttp.status != 200) {
+					console.log("HTTP error: " + xmlHttp.status);
+					console.log(xmlHttp.response);
+					return xmlHttp.status;
+				}
+				response = JSON.parse(xmlHttp.response);
+				if (!response) {
+					console.log("No data returned");
+					return;
+				}
+				var additionalDetails = "";
+				var locked = "No";
+				var trafficLimit = "No";
+				var state = {
+					name: response.product.status,
+					color: apiStateDesc["unk"].color
+				}; 
+				if (response.service.daysleft < 1) response.service.daysleft = "none";
+				if (response.service.locked != 0) locked = "Yes, " + response.service.lockreason || "no info";
+				if (!response.product.trafficlimitreached != 0) trafficLimit = "Yes"; // only available on KVMs
+
+				if (!apiStateDesc[response.product.status]) {
+					state.name = apiStateDesc["unk"].desc + "(" + toString(response.product.status) + ")";
+					// dont need to set color as default is already the unk color
+				} else {
+					state.name = apiStateDesc[response.product.status].desc;
+					state.color = apiStateDesc[response.product.status].color;
+				}
+				if (data[index].lastState == response.product.status) return;
+				data[index].lastState = response.product.status;
+
+				// some stuff isnt available on dedicated servers -> additional checks so it wont log node etc as there will never be any data
+				if (response.product.node) additionalDetails += "> **node**: " + response.product.node + "\n"
+				if (response.product.location) additionalDetails += "> **datacenter**: " + response.product.location + "\n"
+				if (response.product.cluster) additionalDetails += "> **cluster**: " + response.product.cluster + "\n"
+				if (response.product.trafficlimitreached) additionalDetails += "> **Traffic Limit Reached**: " + trafficLimit + "\n"
+				additionalDetails += "> **Locked**: " + locked + "\n"
+				additionalDetails += "> **Days left**: " + (response.service.daysleft || "No data") + " | **Price**: " + response.service.price + "€\n"
+				additionalDetails += "> **API-Time**: " + (Date.now() - startTime) + "ms" || "No data" + "\n"
+
+				const details = [
+					{name: "Service", value: data[index].name || "No data"},
+					{name: "Status", value: state.name},
+					{name: response.service.productdisplay + " informations", value: additionalDetails}
+				];
+				sendEmbed(details, index, state.color)
+			} catch (rushEsukabljat) {
+				console.log(rushEsukabljat);
+			}
+		}
+	} catch (rushEsuka) {
+		console.log(rushEsuka);
+	}
+}
+
+function main() {
+	try {
 		setTimeout(function() {
 			main();
 			for (i = 0; i < data.length; i++) {
-				setTimeout(getServerStatus, i*800, i, "ip"); //first request ip then the rest
-				setTimeout(getServerStatus, i*1000, i);
+				getServerStatus(i);
 			}
 		}, rqDelay*1000);
 	} catch (e) {
@@ -177,4 +248,3 @@ function main() {
 	}
 }
 main();
-
