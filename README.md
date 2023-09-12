@@ -11,7 +11,7 @@ This script is designed to monitor the status of servers managed by the Datalix 
   nvm install node
   npm install -g npm@latest
 ```
-- `xhr2` library (install using `npm install xhr2`)
+- `xhr2` library
 
 ## Setup
 
@@ -29,6 +29,7 @@ Open the `index.js` file and locate the `data` array. This array contains server
 ```javascript
 const data = [
  {
+  name: "", // Name that will get logged (not needed if you set 'useIPv4AsName' to true)
  	token: "", // Datalix API token
  	service: "", // Service ID
  	webhook: "", // Discord webhook
@@ -38,6 +39,7 @@ const data = [
 - `token:` Your Datalix API token.
 - `service:` The service ID of the server you want to monitor.
 - `webhook:` The Discord webhook URL where status updates will be sent.
+- set a color for every status (hex) or use the predefined ones.
 ## Running the Script
 
 1. Open a terminal and navigate to the directory containing the `index.js` file.
@@ -69,7 +71,8 @@ WantedBy=multi-user.target">/etc/systemd/system/status.service
 sudo systemctl start status
 sudo systemctl enable status
 ```
-![example](https://cdn.discordapp.com/attachments/1142213964982390871/1145419218121130106/image.png)
+![KVM-example](https://cdn.discordapp.com/attachments/1023665572539539549/1151219192989757440/image.png)
+![Dedi-example](https://cdn.discordapp.com/attachments/1023665572539539549/1151219581780762775/image.png)
 ## Script Details
 - Please note that this script relies on external services (Datalix API and Discord) for proper functionality. Make sure you have valid API tokens and webhook URLs for accurate monitoring and updates.
 - Global ratelimit is 120rq/min per ip so you can only add up to 60 services *MAX* (or you need an aditional server/ip for the requests and a second instance of the script)
