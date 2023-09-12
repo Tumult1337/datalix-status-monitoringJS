@@ -29,13 +29,14 @@ Open the `index.js` file and locate the `data` array. This array contains server
 ```javascript
 const data = [
  {
-  name: "", // Name that will get logged (not needed if you set 'useIPv4AsName' to true)
+ 	name: "",
  	token: "", // Datalix API token
  	service: "", // Service ID
  	webhook: "", // Discord webhook
  },
 ];
 ```
+- `name:` Name that will get logged (not needed if you set 'useIPv4AsName' to true)
 - `token:` Your Datalix API token.
 - `service:` The service ID of the server you want to monitor.
 - `webhook:` The Discord webhook URL where status updates will be sent.
