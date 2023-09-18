@@ -202,7 +202,7 @@ async function getServerStatus(index) {
 				if (!response.product.trafficlimitreached != 0) trafficLimit = "Yes"; // only available on KVMs
 
 				if (!apiStateDesc[response.product.status]) {
-					state.name = apiStateDesc["unk"].desc + "(" + toString(response.product.status) + ")";
+					state.name = apiStateDesc["unk"].desc + "(" + response.product.status + ")";
 					// dont need to set color as default is already the unk color
 				} else {
 					state.name = apiStateDesc[response.product.status].desc;
