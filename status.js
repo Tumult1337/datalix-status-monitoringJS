@@ -81,6 +81,10 @@ const apiStateDesc = {
 		desc:"Service got permanently deleted",
 		color: colors.red
 	},
+	error: {
+		desc:"API responded with an 'error'",
+		color: colors.red
+	},
 	unk: {
 		desc: "No data",
 		color: colors.gray
