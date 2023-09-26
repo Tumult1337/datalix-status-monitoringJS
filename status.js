@@ -209,6 +209,7 @@ async function getServerStatus(index) {
 					state.name = apiStateDesc["unk"].desc + "(" + response.product.status + ")";
 					// dont need to set color as default is already the unk color
 				} else {
+					if (response.product.status == "uselast") return; // internal datalix stuff, would only send last state again 
 					state.name = apiStateDesc[response.product.status].desc;
 					state.color = apiStateDesc[response.product.status].color;
 				}
